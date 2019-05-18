@@ -181,14 +181,25 @@ class TemplateService(object):
         results = {'referential': referential_results, 'query': query_results}
         return results
 
+    @staticmethod
+    def _pick_picture_context(template, picture_context):
+        if picture_context:
+            return picture_context
+        
+        if 'picture' in template:
+            return template['picture']['context']
+
+        return None
+
     @rpc
     def resolve(self, template_id, picture_context, language, json_only, referential, user_parameters,
     user, text_to_path):
         _log.info('{} is resolving template {} ...'.format(user, template_id))
         template = bson.json_util.loads(self.metadata.get_template(template_id, user))
         template_language = language if language else template['language']
+        tmpl_pic_ctx = self._pick_picture_context(template, picture_context)
 
-        results = self._get_template_data(template, picture_context, template_language, json_only,
+        results = self._get_template_data(template, tmpl_pic_ctx, template_language, json_only,
         referential, user_parameters, user)
         json_results = json.dumps(results, cls=DateEncoder)
 
