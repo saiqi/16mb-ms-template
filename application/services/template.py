@@ -188,7 +188,7 @@ class TemplateService(object):
         if picture_context:
             return picture_context
         
-        if 'picture' in template and 'context' in template['picture']:
+        if 'picture' in template and template['picture'] and 'context' in template['picture']:
             return template['picture']['context']
 
         _log.info('No picture context have been picked ...')
@@ -202,6 +202,7 @@ class TemplateService(object):
         _log.info('Language: {}'.format(language))
         template = bson.json_util.loads(self.metadata.get_template(template_id, user))
         template_language = language if language else template['language']
+        _log.info('Template will be resolved in {}'.format(template_language))
         tmpl_pic_ctx = self._pick_picture_context(template, picture_context)
 
         results = self._get_template_data(template, tmpl_pic_ctx, template_language, json_only,
