@@ -1,10 +1,12 @@
 import json
 import datetime
 import uuid
-from logging import getLogger
+from logging import getLogger, basicConfig
 from nameko.rpc import rpc, RpcProxy
 import bson.json_util
 
+FORMAT = '[%(asctime)-15s][%(module)s] %(message)s'
+basicConfig(format=FORMAT)
 _log = getLogger(__name__)
 
 
