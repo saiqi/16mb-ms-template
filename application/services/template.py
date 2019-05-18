@@ -198,6 +198,8 @@ class TemplateService(object):
     def resolve(self, template_id, picture_context, language, json_only, referential, user_parameters,
     user, text_to_path):
         _log.info('{} is resolving template {} ...'.format(user, template_id))
+        _log.info('Picture context: {}'.format(picture_context))
+        _log.info('Language: {}'.format(language))
         template = bson.json_util.loads(self.metadata.get_template(template_id, user))
         template_language = language if language else template['language']
         tmpl_pic_ctx = self._pick_picture_context(template, picture_context)
