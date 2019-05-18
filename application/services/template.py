@@ -186,7 +186,7 @@ class TemplateService(object):
         if picture_context:
             return picture_context
         
-        if 'picture' in template:
+        if 'picture' in template and 'context' in template['picture']:
             return template['picture']['context']
 
         return None
