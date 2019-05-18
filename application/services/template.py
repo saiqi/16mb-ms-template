@@ -152,6 +152,7 @@ class TemplateService(object):
                     current_ref_config[cfg]['picture']['format'], user)
 
     def _get_template_data(self, template, picture_context, language, json_only, referential, user_parameters, user):
+        _log.info('Building template data ...')
         context = template['context']
         referential_results = dict()
         if referential is not None:
@@ -183,12 +184,14 @@ class TemplateService(object):
 
     @staticmethod
     def _pick_picture_context(template, picture_context):
+        _log.info('Picking the right picture context')
         if picture_context:
             return picture_context
         
         if 'picture' in template and 'context' in template['picture']:
             return template['picture']['context']
 
+        _log.info('No picture context have been picked ...')
         return None
 
     @rpc
