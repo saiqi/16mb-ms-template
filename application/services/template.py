@@ -186,8 +186,9 @@ class TemplateService(object):
     user, text_to_path):
         _log.info('{} is resolving template {} ...'.format(user, template_id))
         template = bson.json_util.loads(self.metadata.get_template(template_id, user))
+        template_language = language if language else template['language']
 
-        results = self._get_template_data(template, picture_context, language, json_only,
+        results = self._get_template_data(template, picture_context, template_language, json_only,
         referential, user_parameters, user)
         json_results = json.dumps(results, cls=DateEncoder)
 
