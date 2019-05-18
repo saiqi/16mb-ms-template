@@ -114,10 +114,10 @@ class TemplateService(object):
         return parameters
 
     def _labelize_row(self, row, q, language, context, user):
-        _log.info('Translating labels into {} ...'.format(language)) 
         labelized_row = row.copy()
         if 'labels' in q and q['labels']:
             current_labels = q['labels']
+            _log.info('Translating labels {} into {} ...'.format(current_labels, language)) 
             for lab in current_labels:
                 if lab in row:
                     if current_labels[lab] == 'entity':
