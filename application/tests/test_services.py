@@ -952,4 +952,4 @@ def test_handle_input_loaded(triggers, template, queries, event, entities, query
     service.metadata.get_fired_triggers.return_value = triggers
     service.referential.get_event_filtered_by_entities.return_value = event
     service.subscription.get_subscription_by_user.return_value = subscription
-    service.handle_input_loaded({'meta': {'source': 'opta', 'type': 'f9'}, 'id': '985507'})
+    service.handle_input_loaded('{"meta": {"source": "opta", "type": "f9"}, "id": "985507"}')

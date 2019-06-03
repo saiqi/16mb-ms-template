@@ -296,15 +296,16 @@ class TemplateService(object):
     @event_handler(
         'loader', 'input_loaded', handler_type=BROADCAST, reliable_delivery=False)
     def handle_input_loaded(self, payload):
-        if 'meta' not in payload or 'id' not in payload:
+        msg = bson.json_util.loads(payload)
+        if 'meta' not in msg or 'id' not in msg:
             _log.warning('Inoperable input received !')
             return
-        meta = payload['meta']
+        meta = msg['meta']
         if 'source' not in meta or 'type' not in meta:
             _log.warning('Inoperable meta in received input !')
             return
         _log.info(
-            f'Input event {payload["id"]} received, checking if there is a trigger to refresh ...')
+            f'Input event {msg["id"]} received, checking if there is a trigger to refresh ...')
         on_event = {'source': meta['source'], 'type': meta['type']}
         #####
         triggers = bson.json_util.loads(
@@ -315,7 +316,7 @@ class TemplateService(object):
             if 'export' not in sub['subscription']:
                 _log.warning(f'Export not configured for user {t["user"]}')
             export_config = sub['subscription']['export']
-            res = self.referential.get_event_filtered_by_entities(payload['id'],
+            res = self.referential.get_event_filtered_by_entities(msg['id'],
                                                                   t['selector'], t['user'])
             event = bson.json_util.loads(res)
             if event:
@@ -337,7 +338,7 @@ class TemplateService(object):
                 referential = None
                 if 'referential' in spec:
                     referential = self._handle_trigger_referential_params(
-                        spec['referential'], payload['id'])
+                        spec['referential'], msg['id'])
                 user_parameters = spec.get('user_parameters', None)
 
                 result = self._get_template_data(template, picture_context, language, json_only,
