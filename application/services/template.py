@@ -310,13 +310,14 @@ class TemplateService(object):
         #####
         triggers = bson.json_util.loads(
             self.metadata.get_fired_triggers(on_event))
+        content_id = meta.get('content_id', msg['id'])
         urls = []
         for t in triggers:
             sub = bson.json_util.loads(self.subscription.get_subscription_by_user(t['user']))
             if 'export' not in sub['subscription']:
                 _log.warning(f'Export not configured for user {t["user"]}')
             export_config = sub['subscription']['export']
-            res = self.referential.get_event_filtered_by_entities(msg['id'],
+            res = self.referential.get_event_filtered_by_entities(content_id,
                                                                   t['selector'], t['user'])
             event = bson.json_util.loads(res)
             if event:
@@ -338,7 +339,7 @@ class TemplateService(object):
                 referential = None
                 if 'referential' in spec:
                     referential = self._handle_trigger_referential_params(
-                        spec['referential'], msg['id'])
+                        spec['referential'], content_id)
                 user_parameters = spec.get('user_parameters', None)
 
                 result = self._get_template_data(template, picture_context, language, json_only,
