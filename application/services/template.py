@@ -15,7 +15,6 @@ class ErrorHandler(DependencyProvider):
     def worker_result(self, worker_ctx, res, exc_info):
         if exc_info is None:
             return
-
         exc_type, exc, tb = exc_info
         _log.error(str(exc))
 
@@ -40,6 +39,7 @@ class TemplateService(object):
     svg_builder = RpcProxy('svg_builder')
     subscription = RpcProxy('subscription_manager')
     exporter = RpcProxy('exporter')
+    notifier = RpcProxy('notifier')
 
     @staticmethod
     def _get_display_name(entity, language):
@@ -311,47 +311,54 @@ class TemplateService(object):
         triggers = bson.json_util.loads(
             self.metadata.get_fired_triggers(on_event))
         content_id = meta.get('content_id', msg['id'])
-        urls = []
         for t in triggers:
             sub = bson.json_util.loads(self.subscription.get_subscription_by_user(t['user']))
             if 'export' not in sub['subscription']:
                 _log.warning(f'Export not configured for user {t["user"]}')
+                continue
             export_config = sub['subscription']['export']
             res = self.referential.get_event_filtered_by_entities(content_id,
                                                                   t['selector'], t['user'])
             event = bson.json_util.loads(res)
-            if event:
-                _log.info(f'Refreshing trigger {t["id"]} on event {event["id"]}')
-                spec = t['template']
-                template = bson.json_util.loads(
-                    self.metadata.get_template(spec['id'], t['user']))
-                if not template:
-                    _log.error(f'Template {spec["id"]} not found')
-                    return
-                picture_context = None
-                if template['picture']:
-                    picture_context = template['picture']['context']
-                if 'picture' in spec and 'context' in spec['picture']:
-                    picture_context = spec['picture']['context']
+            if not event:
+                _log.info('No event has been found !')
+            
+            _log.info(f'Refreshing trigger {t["id"]} on event {event["id"]}')
+            spec = t['template']
+            template = bson.json_util.loads(
+                self.metadata.get_template(spec['id'], t['user']))
+            if not template:
+                _log.error(f'Template {spec["id"]} not found')
+                continue
+            picture_context = None
+            if template['picture']:
+                picture_context = template['picture']['context']
+            if 'picture' in spec and 'context' in spec['picture']:
+                picture_context = spec['picture']['context']
 
-                language = spec.get('language', template['language'])
-                json_only = spec.get('json_only', False)
-                referential = None
-                if 'referential' in spec:
-                    referential = self._handle_trigger_referential_params(
-                        spec['referential'], content_id)
-                user_parameters = spec.get('user_parameters', None)
+            language = spec.get('language', template['language'])
+            json_only = spec.get('json_only', False)
+            referential = None
+            if 'referential' in spec:
+                referential = self._handle_trigger_referential_params(
+                    spec['referential'], content_id)
+            user_parameters = spec.get('user_parameters', None)
 
-                result = self._get_template_data(template, picture_context, language, json_only,
-                                                 referential, user_parameters, t['user'])
-                json_results = json.dumps(result, cls=DateEncoder)
-                if json_only and t['export']['format'] == 'json':
-                    url = self.exporter.upload(
-                        json_results, t['export']['filename'], export_config)
-                else:
-                    infography = self.svg_builder.replace_jsonpath(
-                        template['svg'], json.loads(json_results))
-                    result = self.exporter.text_to_path(infography)
-                    url = self.exporter.export(
-                        result, t['export']['filename'], export_config)
-                urls.append(url)
+            result = self._get_template_data(template, picture_context, language, json_only,
+                                                referential, user_parameters, t['user'])
+            json_results = json.dumps(result, cls=DateEncoder)
+            if json_only and t['export']['format'] == 'json':
+                url = self.exporter.upload(
+                    json_results, t['export']['filename'], export_config)
+            else:
+                infography = self.svg_builder.replace_jsonpath(
+                    template['svg'], json.loads(json_results))
+                result = self.exporter.text_to_path(infography)
+                url = self.exporter.export(
+                    result, t['export']['filename'], export_config)
+                if 'notification' not in sub['subscritption']:
+                    _log.warning(f'{t["user"]} notification configuration not found !')
+                    continue
+                notif_config = sub['subscription']['notification']['config']
+                self.notifier.send_to_slack(
+                    f'#{notif_config["channel"]}', t['name'], image_url=url, context=t['id'])
