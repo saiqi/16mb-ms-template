@@ -75,15 +75,11 @@ class TemplateService(object):
             referential_results[entry_key]['picture'][_format] = None
 
         if json_only is False:
-            _log.info('Appending picture to referential entry {} (context: {} / format: {})'
-                      .format(entry_id, context, _format))
             picture = self.referential.get_entity_picture(
                 entry_id, context, _format, user)
             if not picture:
-                msg = 'Picture not found for referential entry: {} (context: {} / format: {})'.format(
-                    entry_id, context, _format)
-                _log.error(msg)
-                raise TemplateServiceError(msg)
+                raise TemplateServiceError('Picture not found for referential entry: {} (context: {} / format: {})'.format(
+                    entry_id, context, _format))
             referential_results[entry_key]['picture'][_format] = picture
 
     def _handle_referential(self, referential, language, json_only, user):
@@ -117,49 +113,49 @@ class TemplateService(object):
     def _get_query_parameters_and_append_pictures(self, q, current_query, user_parameters, referential_results, json_only, context, user):
         current_id = q['id']
         parameters = list()
-        if current_query['parameters']:
-            for p in current_query['parameters']:
-                if user_parameters is not None:
-                    if current_id in user_parameters and p in user_parameters[current_id]:
-                        parameters.append(user_parameters[current_id][p])
-                if 'referential_parameters' in q and q['referential_parameters']:
-                    for ref in q['referential_parameters']:
-                        if p in ref:
-                            entry_id = referential_results[ref[p]
-                                                           ['name']]['id']
-                            parameters.append(entry_id)
-                            if 'picture' in ref[p] and json_only is False:
-                                if 'format' not in ref[p]['picture']:
-                                    raise TemplateServiceError(
-                                        'Format not in picture configuration for referential parameter {}'.format(p))
-                                _format = ref[p]['picture']['format']
-                                self._append_picture_into_referential_results(
-                                    ref[p]['name'], referential_results, json_only, context, _format, user)
+        if not current_query['parameters']:
+            return None
+        for p in current_query['parameters']:
+            if user_parameters and current_id in user_parameters and p in user_parameters[current_id]:
+                parameters.append(user_parameters[current_id][p])
+            if 'referential_parameters' not in q or not q['referential_parameters']:
+                continue
+            for ref in filter(lambda x: p in x, q['referential_parameters']):
+                entry_id = referential_results[ref[p]['name']]['id']
+                parameters.append(entry_id)
+                if 'picture' in ref[p] and json_only is False:
+                    if 'format' not in ref[p]['picture']:
+                        raise TemplateServiceError(
+                            'Format not in picture configuration for referential parameter {}'.format(p))
+                    _format = ref[p]['picture']['format']
+                    self._append_picture_into_referential_results(
+                        ref[p]['name'], referential_results, json_only, context, _format, user)
         _log.info("Following parameters:{} has been built and will be applied to the query {}".format(
             parameters, current_id))
         return parameters
 
     def _labelize_row(self, row, q, language, context, user):
         labelized_row = row.copy()
-        if 'labels' in q and q['labels']:
-            current_labels = q['labels']
-            for lab in current_labels:
-                if lab in row:
-                    if current_labels[lab] == 'entity':
-                        current_entity = bson.json_util.loads(
-                            self.referential.get_entity_by_id(row[lab], user))
-                        labelized_row[lab] = current_entity['common_name']
-                    elif current_labels[lab] == 'label':
-                        current_label = self.referential.get_labels_by_id_and_language_and_context(
-                            row[lab], language, context)
-                        if current_label is None:
-                            raise TemplateServiceError(
-                                'Label {} not found'.format(row[lab]))
-                        labelized_row[lab] = current_label['label']
+        if 'labels' not in q or not q['labels']:
+            return labelized_row
+        current_labels = q['labels']
+        for lab in current_labels:
+            if lab not in row:
+                continue
+            if current_labels[lab] == 'entity':
+                current_entity = bson.json_util.loads(
+                    self.referential.get_entity_by_id(row[lab], user))
+                labelized_row[lab] = current_entity['common_name']
+            elif current_labels[lab] == 'label':
+                current_label = self.referential.get_labels_by_id_and_language_and_context(
+                    row[lab], language, context)
+                if current_label is None:
+                    raise TemplateServiceError(
+                        'Label {} not found'.format(row[lab]))
+                labelized_row[lab] = current_label['label']
         return labelized_row
 
     def _append_referential_results(self, row, q, referential_results, json_only, context, language, user):
-        _log.info('Appending all referential results ...')
         current_ref_config = q['referential_results']
         for cfg in current_ref_config:
             if current_ref_config[cfg]['event_or_entity'] == 'event':
@@ -312,7 +308,8 @@ class TemplateService(object):
             self.metadata.get_fired_triggers(on_event))
         content_id = meta.get('content_id', msg['id'])
         for t in triggers:
-            sub = bson.json_util.loads(self.subscription.get_subscription_by_user(t['user']))
+            sub = bson.json_util.loads(
+                self.subscription.get_subscription_by_user(t['user']))
             if 'export' not in sub['subscription']:
                 _log.warning(f'Export not configured for user {t["user"]}')
                 continue
@@ -322,7 +319,7 @@ class TemplateService(object):
             event = bson.json_util.loads(res)
             if not event:
                 _log.info('No event has been found !')
-            
+
             _log.info(f'Refreshing trigger {t["id"]} on event {event["id"]}')
             spec = t['template']
             template = bson.json_util.loads(
@@ -345,7 +342,7 @@ class TemplateService(object):
             user_parameters = spec.get('user_parameters', None)
 
             result = self._get_template_data(template, picture_context, language, json_only,
-                                                referential, user_parameters, t['user'])
+                                             referential, user_parameters, t['user'])
             json_results = json.dumps(result, cls=DateEncoder)
             if json_only and t['export']['format'] == 'json':
                 url = self.exporter.upload(
@@ -357,7 +354,8 @@ class TemplateService(object):
                 url = self.exporter.export(
                     result, t['export']['filename'], export_config)
                 if 'notification' not in sub['subscription']:
-                    _log.warning(f'{t["user"]} notification configuration not found !')
+                    _log.warning(
+                        f'{t["user"]} notification configuration not found !')
                     continue
                 notif_config = sub['subscription']['notification']['config']
                 self.notifier.send_to_slack(
