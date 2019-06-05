@@ -923,7 +923,11 @@ def subscription():
                     "config": {"bucket": "my_bucket"}
                 }
             },
-            "pictures": ["default"]
+            "pictures": ["default"],
+            "notification": {
+                "type": "slack",
+                "config": {"channel": "my_channel"}
+            }
         }
     }
     """

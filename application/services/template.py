@@ -356,7 +356,7 @@ class TemplateService(object):
                 result = self.exporter.text_to_path(infography)
                 url = self.exporter.export(
                     result, t['export']['filename'], export_config)
-                if 'notification' not in sub['subscritption']:
+                if 'notification' not in sub['subscription']:
                     _log.warning(f'{t["user"]} notification configuration not found !')
                     continue
                 notif_config = sub['subscription']['notification']['config']
