@@ -248,6 +248,9 @@ class TemplateService(object):
         _log.info('Language: {}'.format(language))
         template = bson.json_util.loads(
             self.metadata.get_template(template_id, user))
+        if not template:
+            raise TemplateServiceError(
+                f'Template {template_id} not found or {user} not allowed to resolve template !')
         template_language = language if language else template['language']
         _log.info('Template will be resolved in {}'.format(template_language))
         tmpl_pic_ctx = self._pick_picture_context(template, picture_context)
