@@ -354,8 +354,10 @@ class TemplateService(object):
                 infography = self.svg_builder.replace_jsonpath(
                     template['svg'], json.loads(json_results))
                 result = self.exporter.text_to_path(infography)
+                filename = t['export'].get(
+                    'filename', '.'.join([str(uuid.uuid4()), t['export']['format']]))
                 url = self.exporter.export(
-                    result, t['export']['filename'], export_config)
+                    result, filename, export_config)
                 if 'notification' not in sub['subscription']:
                     _log.warning(
                         f'{t["user"]} notification configuration not found !')
