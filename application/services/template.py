@@ -322,6 +322,7 @@ class TemplateService(object):
             event = bson.json_util.loads(res)
             if not event:
                 _log.info('No event has been found !')
+                continue
 
             _log.info(f'Refreshing trigger {t["id"]} on event {event["id"]}')
             spec = t['template']

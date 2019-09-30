@@ -883,32 +883,59 @@ def query_results():
 @pytest.fixture
 def triggers():
     return """
-    [{
-    "id": "dsa_troyes_mt_duel",
-    "name": "DSAS Troyes team stats",
-    "on_event": {
-        "source": "opta",
-        "type": "f9"
-    },
-    "selector": [
-        "t144"
-    ],
-    "template": {
-        "id": "dsa_fbl_mt_duel",
-        "json_only": false,
-        "language": "FR",
-        "referential": {
-        "match": {
-            "from_event": true
-        }
-        }
-    },
-    "user": "my_user",
-    "export": {
-        "format": "png",
-        "filename": "export.png"
-    }
-    }]
+    [
+        {
+            "id": "dsa_troyes_mt_duel",
+            "name": "DSAS Troyes team stats",
+            "on_event": {
+                "source": "opta",
+                "type": "f9"
+            },
+            "selector": [
+                "t144"
+            ],
+            "template": {
+                "id": "dsa_fbl_mt_duel",
+                "json_only": false,
+                "language": "FR",
+                "referential": {
+                    "match": {
+                        "from_event": true
+                    }
+                }
+            },
+            "user": "my_user",
+            "export": {
+                "format": "png",
+                "filename": "export.png"
+            }
+        },
+        {
+            "id": "dsa_troyes_mt_duel_2",
+            "name": "DSAS Troyes team stats",
+            "on_event": {
+                "source": "opta",
+                "type": "f9"
+            },
+            "selector": [
+                "t144"
+            ],
+            "template": {
+                "id": "dsa_fbl_mt_duel",
+                "json_only": false,
+                "language": "FR",
+                "referential": {
+                    "match": {
+                        "from_event": true
+                    }
+                }
+            },
+            "user": "my_user",
+            "export": {
+                "format": "png"
+            }
+        }    
+    ]
     """
 
 @pytest.fixture
