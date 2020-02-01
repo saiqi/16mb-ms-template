@@ -274,7 +274,7 @@ class TemplateService(object):
                 _log.info('Converting text into path in generated SVG ...')
                 return {'content': self.exporter.text_to_path(infography), 'mimetype': 'image/svg+xml'}
 
-            return {'content': infography, 'mimetype': 'image/svg+xml'}
+            return {'content': self.exporter.to_plain_svg(infography), 'mimetype': 'image/svg+xml'}
         else:
             sub = bson.json_util.loads(
                 self.subscription.get_subscription_by_user(user))
