@@ -62,7 +62,8 @@ def template():
                         "event_or_entity": "entity",
                         "column_id": "competition_flag",
                         "picture": {
-                            "format": "standard"
+                            "format": "standard",
+                            "kind": "vectorial"
                         }
                     }
                 },

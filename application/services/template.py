@@ -66,7 +66,7 @@ class TemplateService(object):
             return {'first_name': entity['informations']['first_name'], 'last_name': entity['informations']['last_name']}
         return {'first_name': '', 'last_name': TemplateService._get_display_name(entity, language)}
 
-    def _append_picture_into_referential_results(self, entry_key, referential_results, json_only, context, _format, user):
+    def _append_picture_into_referential_results(self, entry_key, referential_results, json_only, context, _format, kind, user):
         entry_id = referential_results[entry_key]['id']
         if 'picture' not in referential_results[entry_key]:
             referential_results[entry_key]['picture'] = {}
@@ -76,7 +76,7 @@ class TemplateService(object):
 
         if json_only is False:
             picture = self.referential.get_entity_picture(
-                entry_id, context, _format, user)
+                entry_id, context, _format, user, kind)
             if not picture:
                 raise TemplateServiceError('Picture not found for referential entry: {} (context: {} / format: {})'.format(
                     entry_id, context, _format))
@@ -128,8 +128,9 @@ class TemplateService(object):
                         raise TemplateServiceError(
                             'Format not in picture configuration for referential parameter {}'.format(p))
                     _format = ref[p]['picture']['format']
+                    kind = ref[p]['picture'].get('kind', 'bitmap')
                     self._append_picture_into_referential_results(
-                        ref[p]['name'], referential_results, json_only, context, _format, user)
+                        ref[p]['name'], referential_results, json_only, context, _format, kind, user)
         _log.info("Following parameters:{} has been built and will be applied to the query {}".format(
             parameters, current_id))
         return parameters
@@ -180,7 +181,9 @@ class TemplateService(object):
             referential_results[row[current_column_id]] = current_ref_result
             if 'picture' in current_ref_config[cfg] and json_only is False:
                 self._append_picture_into_referential_results(row[current_column_id], referential_results, json_only, context,
-                                                              current_ref_config[cfg]['picture']['format'], user)
+                                                              current_ref_config[cfg]['picture']['format'],
+                                                              current_ref_config[cfg]['picture'].get('kind', 'bitmap'),
+                                                              user)
 
     def _get_template_data(self, template, picture_context, language, json_only, referential, user_parameters, user):
         _log.info('Building template data ...')
