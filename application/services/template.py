@@ -42,20 +42,28 @@ class TemplateService(object):
     notifier = RpcProxy('notifier')
 
     @staticmethod
+    def _get_overriden_name(entity, language):
+        return entity.get('internationalization', {}).get(language)
+
+    @staticmethod
     def _get_display_name(entity, language):
-        if 'internationalization' in entity and language in entity['internationalization']:
-            return entity['internationalization'][language]
+        if TemplateService._get_overriden_name(entity, language):
+            return TemplateService._get_overriden_name(entity, language)
+        
         return entity['common_name']
 
     @staticmethod
     def _get_short_name(entity, language):
+        if TemplateService._get_overriden_name(entity, language):
+            return TemplateService._get_overriden_name(entity, language)
+        
         if 'informations' in entity and entity['informations']\
                 and 'last_name' in entity['informations'] and 'known' in entity['informations']:
             if entity['informations']['known']:
                 return entity['informations']['known']
             return entity['informations']['last_name']
 
-        return TemplateService._get_display_name(entity, language)
+        return entity['common_name']
 
     @staticmethod
     def _get_multiline_name(entity, language):
