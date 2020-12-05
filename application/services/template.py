@@ -301,14 +301,11 @@ class TemplateService(object):
             url = self.exporter.upload(json_results, filename, export_config)
             html = template['html']
 
-            if not CDN_ROOT_URL:
-                raise TemplateServiceError('Please set a value for CDN_ROOT_URL!')
-
-            if '${DATASOURCE}' not in template['html'] or '${CDN_ROOT_URL}':
+            if '${DATASOURCE}' not in template['html']:
                 raise TemplateServiceError(
-                    'Missing either DATASOURCE or CDN_ROOT_URL variable in HTML template!')
+                    'Missing DATASOURCE variable in HTML template!')
             return {
-                'content': html.replace('${DATASOURCE}', url).replace('${CDN_ROOT_URL}', CDN_ROOT_URL),
+                'content': html.replace('${DATASOURCE}', url).replace('${CDN_ROOT_URL}', CDN_ROOT_URL or ''),
                 'mimetype': 'text/html'
             }
 
