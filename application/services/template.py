@@ -1,5 +1,6 @@
 import json
 import datetime
+import os
 import uuid
 from logging import getLogger, basicConfig
 from nameko.rpc import rpc, RpcProxy
@@ -9,6 +10,7 @@ import bson.json_util
 
 _log = getLogger(__name__)
 
+CDN_ROOT_URL = os.getenv('CDN_ROOT_URL')
 
 class ErrorHandler(DependencyProvider):
 
@@ -49,14 +51,14 @@ class TemplateService(object):
     def _get_display_name(entity, language):
         if TemplateService._get_overriden_name(entity, language):
             return TemplateService._get_overriden_name(entity, language)
-        
+
         return entity['common_name']
 
     @staticmethod
     def _get_short_name(entity, language):
         if TemplateService._get_overriden_name(entity, language):
             return TemplateService._get_overriden_name(entity, language)
-        
+
         if 'informations' in entity and entity['informations']\
                 and 'last_name' in entity['informations'] and 'known' in entity['informations']:
             if entity['informations']['known']:
@@ -298,10 +300,17 @@ class TemplateService(object):
             _log.info('Uploading JSON data on user\'s configured datasource ...')
             url = self.exporter.upload(json_results, filename, export_config)
             html = template['html']
-            if '${DATASOURCE}' not in template['html']:
+
+            if not CDN_ROOT_URL:
+                raise TemplateServiceError('Please set a value for CDN_ROOT_URL!')
+
+            if '${DATASOURCE}' not in template['html'] or '${CDN_ROOT_URL}':
                 raise TemplateServiceError(
-                    'Missing DATASOURCE variable in HTML template')
-            return {'content': html.replace('${DATASOURCE}', url), 'mimetype': 'text/html'}
+                    'Missing either DATASOURCE or CDN_ROOT_URL variable in HTML template!')
+            return {
+                'content': html.replace('${DATASOURCE}', url).replace('${CDN_ROOT_URL}', CDN_ROOT_URL),
+                'mimetype': 'text/html'
+            }
 
     @event_handler(
         'loader', 'input_loaded', handler_type=BROADCAST, reliable_delivery=False)
